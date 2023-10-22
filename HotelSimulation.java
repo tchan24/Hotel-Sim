@@ -1,3 +1,4 @@
+import java.util.Queue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -92,17 +93,42 @@ public class HotelSimulation {
         }
     }
 
-    static class Bellhop implements Runnable {
-        private final int id;
-
-        public Bellhop(int id) {
-            this.id = id;
-            System.out.println("Bellhop " + id + " created");
-        }
-
-        @Override
-        public void run() {
-            // Logic to serve guests
+    class Bellhop implements Runnable {
+    private int id;
+    private Semaphore bellhopSemaphore;
+    private Semaphore guestSemaphore;
+    private Queue<Guest> queue;
+    
+    public Bellhop(int id, Semaphore bellhopSemaphore, Semaphore guestSemaphore, Queue<Guest> queue) {
+        this.id = id;
+        this.bellhopSemaphore = bellhopSemaphore;
+        this.guestSemaphore = guestSemaphore;
+        this.queue = queue;
+    }
+    
+    @Override
+    public void run() {
+        System.out.println("Bellhop " + id + " created");
+        try {
+            while(true) {
+                bellhopSemaphore.acquire();
+                Guest guest = queue.poll();
+                if(guest == null) {
+                    bellhopSemaphore.release();
+                    break;
+                }
+                System.out.println("Bellhop " + id + " receives bags from guest " + guest.getId());
+                guestSemaphore.release();
+                
+                guest.getRoomSemaphore().acquire();
+                System.out.println("Bellhop " + id + " delivers bags to guest " + guest.getId());
+                System.out.println("Guest " + guest.getId() + " receives bags from bellhop " + id + " and gives tip");
+                guest.getBagSemaphore().release();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
+}
+
 }
