@@ -1,134 +1,91 @@
-import java.util.Queue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
 
 public class HotelSimulation {
 
-    private static final int TOTAL_GUESTS = 25;
-    private static final int TOTAL_ROOMS = 25;
-    private static final AtomicInteger currentRoomNumber = new AtomicInteger(0);
-    private static final Semaphore frontDeskSemaphore = new Semaphore(2); // Two front desk employees
-    private static final Semaphore bellhopSemaphore = new Semaphore(2); // Two bellhops
+    public static class Bellhop implements Runnable {
+        private int id;
+        private Semaphore bellhopSemaphore;
+        private static ArrayList<Guest> guestsNeedingBellhop = new ArrayList<>();
 
-    public static void main(String[] args) throws InterruptedException {
-        System.out.println("Simulation starts");
-        
-        // Create threads for front desk employees
-        Thread frontDesk1 = new Thread(new FrontDesk(0));
-        Thread frontDesk2 = new Thread(new FrontDesk(1));
-        frontDesk1.start();
-        frontDesk2.start();
-        
-        // Create threads for bellhops
-        Thread bellhop1 = new Thread(new Bellhop(0));
-        Thread bellhop2 = new Thread(new Bellhop(1));
-        bellhop1.start();
-        bellhop2.start();
-        
-        // Create threads for guests
-        Thread[] guests = new Thread[TOTAL_GUESTS];
-        for (int i = 0; i < TOTAL_GUESTS; i++) {
-            guests[i] = new Thread(new Guest(i));
-            guests[i].start();
-            guests[i].join();
-        }
-        
-        System.out.println("Simulation ends");
-    }
-    
-    static class Guest implements Runnable {
-        private final int id;
-        private final int bags;
-
-        public Guest(int id) {
+        public Bellhop(int id) {
             this.id = id;
-            this.bags = (int) (Math.random() * 6); // Randomly assigns bags between 0 and 5
-            System.out.println("Guest " + id + " created");
+            this.bellhopSemaphore = new Semaphore(1);
         }
 
         @Override
         public void run() {
             try {
-                System.out.println("Guest " + id + " enters hotel with " + bags + " bag" + (bags != 1 ? "s" : ""));
-                frontDeskSemaphore.acquire();
-                
-                // Front desk logic here
-                int room = currentRoomNumber.incrementAndGet();
-                System.out.println("Front desk employee registers guest " + id + " and assigns room " + room);
-                System.out.println("Guest " + id + " receives room key for room " + room + " from front desk employee");
-                frontDeskSemaphore.release();
-                
-                if (bags > 2) {
-                    bellhopSemaphore.acquire(); // Bellhop is only needed if guest has more than 2 bags
-                    System.out.println("Guest " + id + " requests help with bags");
-                    // Bellhop logic here
-                    bellhopSemaphore.release();
+                while (true) {
+                    bellhopSemaphore.acquire();
+                    Guest guest = getGuestRequiringBellhop();
+                    if (guest == null) continue;  // No guest found, continue to next iteration
+
+                    System.out.println("Bellhop " + id + " receives bags from guest " + guest.getId());
+                    guest.getRoomSemaphore().acquire();
+                    System.out.println("Bellhop " + id + " delivers bags to guest " + guest.getId());
+                    System.out.println("Guest " + guest.getId() + " receives bags from bellhop " + id + " and gives tip");
+                    guest.getBagSemaphore().release();
                 }
-                
-                System.out.println("Guest " + id + " enters room " + room); // Guest enters room
-                
-                if (bags > 2) {
-                    System.out.println("Guest " + id + " receives bags and gives tip"); //
-                }
-                
-                System.out.println("Guest " + id + " retires for the evening");
-                System.out.println("Guest " + id + " joined");
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
             }
         }
-    }
-    
-    static class FrontDesk implements Runnable {
-        private final int id;
 
-        public FrontDesk(int id) {
+        public static synchronized Guest getGuestRequiringBellhop() {
+            if (!guestsNeedingBellhop.isEmpty()) {
+                return guestsNeedingBellhop.remove(0);
+            }
+            return null;
+        }
+
+        public static synchronized void addGuestRequiringBellhop(Guest guest) {
+            guestsNeedingBellhop.add(guest);
+        }
+    }
+
+    public static class Guest {
+        private int id;
+        private Semaphore roomSemaphore;
+        private Semaphore bagSemaphore;
+
+        public Guest(int id) {
             this.id = id;
-            System.out.println("Front desk employee " + id + " created");
+            this.roomSemaphore = new Semaphore(0);
+            this.bagSemaphore = new Semaphore(0);
         }
 
-        @Override
-        public void run() {
-            // Logic to serve guests
+        public int getId() {
+            return id;
+        }
+
+        public Semaphore getRoomSemaphore() {
+            return roomSemaphore;
+        }
+
+        public Semaphore getBagSemaphore() {
+            return bagSemaphore;
         }
     }
 
-    class Bellhop implements Runnable {
-    private int id;
-    private Semaphore bellhopSemaphore;
-    private Semaphore guestSemaphore;
-    private Queue<Guest> queue;
-    
-    public Bellhop(int id, Semaphore bellhopSemaphore, Semaphore guestSemaphore, Queue<Guest> queue) {
-        this.id = id;
-        this.bellhopSemaphore = bellhopSemaphore;
-        this.guestSemaphore = guestSemaphore;
-        this.queue = queue;
-    }
-    
-    @Override
-    public void run() {
-        System.out.println("Bellhop " + id + " created");
-        try {
-            while(true) {
-                bellhopSemaphore.acquire();
-                Guest guest = queue.poll();
-                if(guest == null) {
-                    bellhopSemaphore.release();
-                    break;
-                }
-                System.out.println("Bellhop " + id + " receives bags from guest " + guest.getId());
-                guestSemaphore.release();
-                
-                guest.getRoomSemaphore().acquire();
-                System.out.println("Bellhop " + id + " delivers bags to guest " + guest.getId());
-                System.out.println("Guest " + guest.getId() + " receives bags from bellhop " + id + " and gives tip");
-                guest.getBagSemaphore().release();
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-}
+    public static void main(String[] args) {
+        // Starting bellhops
+        Thread bellhop1 = new Thread(new Bellhop(0));
+        Thread bellhop2 = new Thread(new Bellhop(1));
+        bellhop1.start();
+        bellhop2.start();
 
+        // Simulate guest creation and operations
+        ArrayList<Guest> guests = new ArrayList<>();
+        for (int i = 0; i < 25; i++) {
+            Guest guest = new Guest(i);
+            guests.add(guest);
+            
+            System.out.println("Guest " + guest.getId() + " created");
+            // Some simulated operations here...
+            Bellhop.addGuestRequiringBellhop(guest);  // Add guest for bellhop assistance
+        }
+
+        // You can continue with other simulation steps...
+    }
 }
