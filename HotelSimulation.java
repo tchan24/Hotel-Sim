@@ -3,6 +3,9 @@ import java.util.ArrayList;
 
 public class HotelSimulation {
 
+    public static Thread bellhop1;
+    public static Thread bellhop2;
+
     public static class Bellhop implements Runnable {
         private int id;
         private static Semaphore bellhopSemaphore = new Semaphore(0);  // Initialize to 0 so bellhops wait
@@ -27,9 +30,11 @@ public class HotelSimulation {
                     System.out.println("Bellhop " + id + " delivers bags to guest " + guest.getId());
                     System.out.println("Guest " + guest.getId() + " receives bags from bellhop " + id + " and gives tip");
                     guest.getBagSemaphore().release();
+                    guest.serviced();
                 }
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+                //Thread.currentThread().interrupt();
+                return;
             }
         }
 
@@ -51,6 +56,18 @@ public class HotelSimulation {
         private int id;
         private Semaphore roomSemaphore;
         private Semaphore bagSemaphore;
+        private static int servicedGuestCount = 0; // New Counter
+        private static final Object lock = new Object(); // A lock object for synchronization
+
+        public void serviced() {
+            synchronized (lock) {
+                servicedGuestCount++;
+                if (servicedGuestCount == 25) { // 25 is the total number of guests
+                    HotelSimulation.bellhop1.interrupt(); // Interrupt the bellhop threads
+                    HotelSimulation.bellhop2.interrupt();
+                }
+            }
+        }
 
         public Guest(int id) {
             this.id = id;
@@ -73,8 +90,8 @@ public class HotelSimulation {
 
     public static void main(String[] args) {
         // Starting bellhops
-        Thread bellhop1 = new Thread(new Bellhop(0));
-        Thread bellhop2 = new Thread(new Bellhop(1));
+        bellhop1 = new Thread(new Bellhop(0));
+        bellhop2 = new Thread(new Bellhop(1));
         bellhop1.start();
         bellhop2.start();
 
