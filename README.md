@@ -2,16 +2,16 @@
 A hotel is simulated by using threads and semaphores to model customer and employee behavior.  
 
 ## How to run  
-'''shell
+```shell
 javac HotelSimulation.java
 java HotelSimulation.java
-'''  
+```  
 
 ## Description  
 25 Guests, 2 Front Desk Employees, 2 Bellhops  
-
+  
 ### Sample Output  
-'''shell
+```shell
 Simulation starts
 Front desk employee 0 created
 Front desk employee 1 created
@@ -47,4 +47,4 @@ Guest 1 retires for the evening
 Guest 1 joined
 Guest 2 joined
 Simulation ends
-'''
+```
