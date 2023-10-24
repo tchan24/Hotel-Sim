@@ -4,13 +4,17 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class HotelSimulation {
 
+    //create bellhop and employee static Thread variables
     public static Thread bellhop1;
     public static Thread bellhop2;
     public static Thread frontDeskEmployee1;
     public static Thread frontDeskEmployee2;
 
+    // create static ReentrantLocks for bellhop and employee
     public static ReentrantLock bellhopLock = new ReentrantLock();
     public static ReentrantLock frontDeskLock = new ReentrantLock();
+
+    // create initial roomNumber variable
     public static int roomNumber = 1;
 
     public static class FrontDeskEmployee implements Runnable {
@@ -153,13 +157,18 @@ public class HotelSimulation {
     }
 
     public static void main(String[] args) {
+        // print Simulation starts
         System.out.println("Simulation starts");
+
+        // create 2 front desk employee threads and print their creation
         frontDeskEmployee1 = new Thread(new FrontDeskEmployee(0));
         frontDeskEmployee2 = new Thread(new FrontDeskEmployee(1));
         frontDeskEmployee1.start();
         frontDeskEmployee2.start();
         System.out.println("Front desk employee 0 created");
         System.out.println("Front desk employee 1 created");
+
+        // create 2 bellhop threads and print their creation
         bellhop1 = new Thread(new Bellhop(0));
         bellhop2 = new Thread(new Bellhop(1));
         bellhop1.start();
@@ -167,6 +176,7 @@ public class HotelSimulation {
         System.out.println("Bellhop 0 created");
         System.out.println("Bellhop 1 created");
 
+        // create 25 guest threads and print their creation
         ArrayList<Thread> guestThreads = new ArrayList<>();
         for (int i = 0; i < 25; i++) {
             Thread guestThread = new Thread(new Guest(i));
@@ -183,9 +193,11 @@ public class HotelSimulation {
             }
         }
 
+        // interrupt all bellhop threads
         bellhop1.interrupt();
         bellhop2.interrupt();
 
+        // print Simulation ends and exit
         System.out.println("Simulation ends");
         System.exit(0);
     }
