@@ -1,6 +1,5 @@
 import java.util.concurrent.Semaphore;
 import java.util.ArrayList;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class HotelSimulation {
 
@@ -10,12 +9,29 @@ public class HotelSimulation {
     public static Thread frontDeskEmployee1;
     public static Thread frontDeskEmployee2;
 
-    // create static ReentrantLocks for bellhop and employee
-    public static ReentrantLock bellhopLock = new ReentrantLock();
-    public static ReentrantLock frontDeskLock = new ReentrantLock();
+    // create static SpinLocks for bellhop and employee
+    public static SpinLock bellhopLock = new SpinLock();
+    public static SpinLock frontDeskLock = new SpinLock();
 
     // create initial roomNumber variable
     public static int roomNumber = 1;
+
+    static class SpinLock {
+        private volatile boolean isLocked = false;
+
+        public void lock() {
+            while (true) {
+                if (!isLocked) {
+                    isLocked = true;
+                    return;
+                }
+            }
+        }
+
+        public void unlock() {
+            isLocked = false;
+        }
+    }
 
     public static class FrontDeskEmployee implements Runnable {
         private int id;
