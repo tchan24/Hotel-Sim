@@ -9,31 +9,12 @@ public class HotelSimulation {
     public static Thread frontDeskEmployee1;
     public static Thread frontDeskEmployee2;
 
-    // create static SpinLocks for bellhop and employee
-    //public static SpinLock bellhopLock = new SpinLock();
-    //public static SpinLock frontDeskLock = new SpinLock();
+    // create static SimpleLocks for bellhop and employee
     public static SimpleLock bellhopLock = new SimpleLock();
     public static SimpleLock frontDeskLock = new SimpleLock();
 
     // create initial roomNumber variable
     public static int roomNumber = 1;
-
-    static class SpinLock {
-        private volatile boolean isLocked = false;
-
-        public void lock() {
-            while (true) {
-                if (!isLocked) {
-                    isLocked = true;
-                    return;
-                }
-            }
-        }
-
-        public void unlock() {
-            isLocked = false;
-        }
-    }
 
     static class SimpleLock {
         private Semaphore mutex = new Semaphore(1);
