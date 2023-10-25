@@ -10,8 +10,10 @@ public class HotelSimulation {
     public static Thread frontDeskEmployee2;
 
     // create static SpinLocks for bellhop and employee
-    public static SpinLock bellhopLock = new SpinLock();
-    public static SpinLock frontDeskLock = new SpinLock();
+    //public static SpinLock bellhopLock = new SpinLock();
+    //public static SpinLock frontDeskLock = new SpinLock();
+    public static SimpleLock bellhopLock = new SimpleLock();
+    public static SimpleLock frontDeskLock = new SimpleLock();
 
     // create initial roomNumber variable
     public static int roomNumber = 1;
@@ -30,6 +32,22 @@ public class HotelSimulation {
 
         public void unlock() {
             isLocked = false;
+        }
+    }
+
+    static class SimpleLock {
+        private Semaphore mutex = new Semaphore(1);
+    
+        public void lock() {
+            try {
+                mutex.acquire();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    
+        public void unlock() {
+            mutex.release();
         }
     }
 
@@ -110,7 +128,7 @@ public class HotelSimulation {
                     }
 
                     System.out.println("Bellhop " + id + " receives bags from guest " + guest.getId());
-                    Thread.sleep(1000);
+                    Thread.sleep(1000); // Simulate some time to deliver the bags
                     guest.getRoomSemaphore().release();
                     System.out.println("Bellhop " + id + " delivers bags to guest " + guest.getId());
                     System.out.println("Guest " + guest.getId() + " receives bags from bellhop " + id + " and gives tip");
