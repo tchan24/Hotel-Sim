@@ -10,7 +10,7 @@ java HotelSimulation.java
 ## Description  
 25 Guests, 2 Front Desk Employees, 2 Bellhops  
   
-### Sample Output  
+### Sample Output for 3 guests 
 ```shell
 Simulation starts
 Front desk employee 0 created
