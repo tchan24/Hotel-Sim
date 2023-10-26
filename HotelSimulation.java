@@ -16,6 +16,7 @@ public class HotelSimulation {
     // create initial roomNumber variable
     public static int roomNumber = 1;
 
+    // create SimpleLock class that imitates ReentrantLock class
     static class SimpleLock {
         private Semaphore mutex = new Semaphore(1);
     
@@ -32,6 +33,7 @@ public class HotelSimulation {
         }
     }
 
+    // create FrontDeskEmployee class that implements Runnable
     public static class FrontDeskEmployee implements Runnable {
         private int id;
         private static Semaphore frontDeskSemaphore = new Semaphore(0);  // Initialize to 0 so front desk employees wait
@@ -60,7 +62,7 @@ public class HotelSimulation {
                     }
 
                     System.out.println("Front desk employee " + id + " registers guest " + guest.getId());
-                    Thread.sleep(500);  // Simulate some time to register the guest
+                    //Thread.sleep(500);  // Simulate some time to register the guest
                     System.out.println("Guest " + guest.getId() + " receives room key for room " + roomNumber + " from front desk employee " + id);
                     roomNumber++;
                     guest.getRoomSemaphore().release();  // Notify the guest that registration is done
@@ -81,7 +83,7 @@ public class HotelSimulation {
         }
     }
 
-
+    // create Bellhop class that implements Runnable
     public static class Bellhop implements Runnable {
         private int id;
         private static Semaphore bellhopSemaphore = new Semaphore(0);
@@ -109,7 +111,7 @@ public class HotelSimulation {
                     }
 
                     System.out.println("Bellhop " + id + " receives bags from guest " + guest.getId());
-                    Thread.sleep(1000); // Simulate some time to deliver the bags
+                    //Thread.sleep(1000); // Simulate some time to deliver the bags
                     guest.getRoomSemaphore().release();
                     System.out.println("Bellhop " + id + " delivers bags to guest " + guest.getId());
                     System.out.println("Guest " + guest.getId() + " receives bags from bellhop " + id + " and gives tip");
@@ -131,6 +133,7 @@ public class HotelSimulation {
         }
     }
 
+    // create Guest class that implements Runnable
     public static class Guest implements Runnable {
         private int id;
         private Semaphore roomSemaphore = new Semaphore(0);
@@ -171,6 +174,7 @@ public class HotelSimulation {
         }
     }
 
+    // main method
     public static void main(String[] args) {
         // print Simulation starts
         System.out.println("Simulation starts");

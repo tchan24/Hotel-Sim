@@ -1,0 +1,59 @@
+Semaphores List:
+
+frontDeskSemaphore
+Purpose: Used to coordinate between guests and front desk employees. It ensures that front desk employees wait for guests to arrive for registration.
+Initial Value: 0
+
+bellhopSemaphore
+Purpose: Used to coordinate between guests and bellhops. It ensures that bellhops wait for guests to request help with bags.
+Initial Value: 0
+
+roomSemaphore (for each Guest)
+Purpose: Used to coordinate between a guest and a front desk employee. It ensures that the guest waits until the registration process is completed.
+Initial Value: 0
+
+bagSemaphore (for each Guest)
+Purpose: Used to coordinate between a guest and a bellhop. It ensures that the guest waits until the bellhop delivers the bags.
+Initial Value: 0
+
+Psuedocode: 
+/* program HotelSimulation */
+
+semaphore frontDeskSemaphore = 0;
+semaphore bellhopSemaphore = 0;
+semaphore roomSemaphore[25] = {0, ...};  // An array of semaphores, one for each guest
+semaphore bagSemaphore[25] = {0, ...};   // An array of semaphores, one for each guest
+
+void Guest() {
+    enter_hotel();
+    semWait(frontDeskSemaphore);
+    register_at_front_desk();
+    semSignal(roomSemaphore[id]);  // id is the guest's ID
+    request_bellhop();
+    semWait(bellhopSemaphore);
+    receive_bags();
+    semSignal(bagSemaphore[id]);  // id is the guest's ID
+    enter_room();
+    retire_for_evening();
+}
+
+void FrontDeskEmployee() {
+    while (true) {
+        semWait(frontDeskSemaphore);
+        register_guest();
+        semSignal(roomSemaphore[guest_id]);  // guest_id is the ID of the guest being registered
+    }
+}
+
+void Bellhop() {
+    while (true) {
+        semWait(bellhopSemaphore);
+        receive_bags_from_guest();
+        deliver_bags_to_room();
+        semSignal(bagSemaphore[guest_id]);  // guest_id is the ID of the guest being served
+    }
+}
+
+void main() {
+    parbegin(Guest, ... 25 times ... , Guest, FrontDeskEmployee, FrontDeskEmployee, Bellhop, Bellhop);
+}
