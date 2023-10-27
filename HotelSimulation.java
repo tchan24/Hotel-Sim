@@ -20,6 +20,7 @@ public class HotelSimulation {
     static class SimpleLock {
         private Semaphore mutex = new Semaphore(1);
     
+        // create lock and unlock methods
         public void lock() {
             try {
                 mutex.acquire();
@@ -35,10 +36,13 @@ public class HotelSimulation {
 
     // create FrontDeskEmployee class that implements Runnable
     public static class FrontDeskEmployee implements Runnable {
+        
+        // create id, Semaphore, and ArrayList variables
         private int id;
         private static Semaphore frontDeskSemaphore = new Semaphore(0);  // Initialize to 0 so front desk employees wait
         private static ArrayList<Guest> guestsAtFrontDesk = new ArrayList<>();
 
+        // create FrontDeskEmployee constructor
         public FrontDeskEmployee(int id) {
             this.id = id;
         }
@@ -50,19 +54,19 @@ public class HotelSimulation {
                     frontDeskSemaphore.acquire();  // Wait for a guest to register
 
                     Guest guest;
-                    frontDeskLock.lock();
+                    frontDeskLock.lock(); // Lock the front desk so only one employee can register a guest at a time
                     try {
-                        if (!guestsAtFrontDesk.isEmpty()) {
-                            guest = guestsAtFrontDesk.remove(0);
+                        if (!guestsAtFrontDesk.isEmpty()) { // Check if there is a guest waiting to be registered
+                            guest = guestsAtFrontDesk.remove(0); // Remove the guest from the list
                         } else {
                             continue;
                         }
                     } finally {
-                        frontDeskLock.unlock();
+                        frontDeskLock.unlock(); // Unlock the front desk
                     }
 
+                    // create FrontDeskEmployee print statements
                     System.out.println("Front desk employee " + id + " registers guest " + guest.getId());
-                    //Thread.sleep(500);  // Simulate some time to register the guest
                     System.out.println("Guest " + guest.getId() + " receives room key for room " + roomNumber + " from front desk employee " + id);
                     roomNumber++;
                     guest.getRoomSemaphore().release();  // Notify the guest that registration is done
@@ -75,7 +79,7 @@ public class HotelSimulation {
         public static void addGuestToRegister(Guest guest) {
             frontDeskLock.lock();
             try {
-                guestsAtFrontDesk.add(guest);
+                guestsAtFrontDesk.add(guest); // Add the guest to the list of guests waiting to be registered
                 frontDeskSemaphore.release();  // Notify a front desk employee that a guest is waiting
             } finally {
                 frontDeskLock.unlock();
@@ -85,24 +89,29 @@ public class HotelSimulation {
 
     // create Bellhop class that implements Runnable
     public static class Bellhop implements Runnable {
+
+        // create id, Semaphore, and ArrayList variables
         private int id;
         private static Semaphore bellhopSemaphore = new Semaphore(0);
         private static ArrayList<Guest> guestsNeedingBellhop = new ArrayList<>();
 
+        // create Bellhop constructor
         public Bellhop(int id) {
             this.id = id;
         }
 
+        // create run method
         @Override
         public void run() {
+            // create while loop that runs until interrupted
             try {
                 while (true) {
                     bellhopSemaphore.acquire();
                     Guest guest;
-                    bellhopLock.lock();
+                    bellhopLock.lock(); // Lock the bellhop so only one bellhop can help a guest at a time
                     try {
                         if (!guestsNeedingBellhop.isEmpty()) {
-                            guest = guestsNeedingBellhop.remove(0);
+                            guest = guestsNeedingBellhop.remove(0); // Remove the guest from the list
                         } else {
                             continue;
                         }
@@ -110,8 +119,8 @@ public class HotelSimulation {
                         bellhopLock.unlock();
                     }
 
+                    // create Bellhop print statements
                     System.out.println("Bellhop " + id + " receives bags from guest " + guest.getId());
-                    //Thread.sleep(1000); // Simulate some time to deliver the bags
                     guest.getRoomSemaphore().release();
                     System.out.println("Bellhop " + id + " delivers bags to guest " + guest.getId());
                     System.out.println("Guest " + guest.getId() + " receives bags from bellhop " + id + " and gives tip");
@@ -122,10 +131,11 @@ public class HotelSimulation {
             }
         }
 
+        // create addGuestRequiringBellhop method
         public static void addGuestRequiringBellhop(Guest guest) {
             bellhopLock.lock();
             try {
-                guestsNeedingBellhop.add(guest);
+                guestsNeedingBellhop.add(guest); // Add the guest to the list of guests needing a bellhop
                 bellhopSemaphore.release();
             } finally {
                 bellhopLock.unlock();
@@ -135,14 +145,18 @@ public class HotelSimulation {
 
     // create Guest class that implements Runnable
     public static class Guest implements Runnable {
+
+        // create id and Semaphore variables for the Guests and their rooms & bags
         private int id;
         private Semaphore roomSemaphore = new Semaphore(0);
         private Semaphore bagSemaphore = new Semaphore(0);
 
+        // create Guest constructor
         public Guest(int id) {
             this.id = id;
         }
 
+        // create run method
         @Override
         public void run() {
             try {
@@ -150,6 +164,7 @@ public class HotelSimulation {
                 FrontDeskEmployee.addGuestToRegister(this);  // Guest waits at the front desk to be registered
                 roomSemaphore.acquire();  // Wait to be registered and get a room key
 
+                // create Guest print statements
                 System.out.println("Guest " + id + " requests help with bags");
                 Bellhop.addGuestRequiringBellhop(this);
                 bagSemaphore.acquire();
@@ -160,7 +175,7 @@ public class HotelSimulation {
             }
         }
 
-
+        // create getId, getRoomSemaphore, and getBagSemaphore methods
         public int getId() {
             return id;
         }
@@ -204,6 +219,7 @@ public class HotelSimulation {
             guestThread.start();
         }
 
+        // join all guest threads
         for (Thread thread : guestThreads) {
             try {
                 thread.join();
